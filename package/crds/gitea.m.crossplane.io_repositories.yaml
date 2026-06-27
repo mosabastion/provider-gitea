@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: repositorykeys.gitea.m.crossplane.io
+  name: repositories.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: RepositoryKey
-    listKind: RepositoryKeyList
-    plural: repositorykeys
+    kind: Repository
+    listKind: RepositoryList
+    plural: repositories
     shortNames:
-    - rkey
-    singular: repositorykey
+    - grepo
+    singular: repository
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -47,6 +47,12 @@ spec:
             properties:
               forProvider:
                 properties:
+                  archived:
+                    default: false
+                    type: boolean
+                  autoInit:
+                    default: false
+                    type: boolean
                   connectionRef:
                     properties:
                       name:
@@ -68,10 +74,19 @@ spec:
                     required:
                     - name
                     type: object
-                  key:
-                    pattern: ^(ssh-rsa|ssh-ed25519|ssh-dss|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521)
-                      AAAA[0-9A-Za-z+/]+[=]{0,3}( .*)?$
+                  defaultBranch:
+                    default: master
                     type: string
+                  description:
+                    type: string
+                  name:
+                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
+                    type: string
+                  owner:
+                    type: string
+                  private:
+                    default: false
+                    type: boolean
                   providerConfigRef:
                     properties:
                       name:
@@ -93,20 +108,19 @@ spec:
                     required:
                     - name
                     type: object
-                  readOnly:
-                    default: true
+                  template:
+                    default: false
                     type: boolean
-                  repository:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?/[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
-                    type: string
-                  title:
-                    maxLength: 100
-                    minLength: 1
+                  trustModel:
+                    default: default
+                    enum:
+                    - default
+                    - collaborator
+                    - committer
+                    - collaboratorcommitter
                     type: string
                 required:
-                - key
-                - repository
-                - title
+                - name
                 type: object
               managementPolicies:
                 default:
@@ -148,20 +162,33 @@ spec:
             properties:
               atProvider:
                 properties:
-                  createdAt:
+                  cloneUrl:
                     type: string
-                  fingerprint:
+                  createdAt:
+                    format: date-time
+                    type: string
+                  forks:
+                    format: int64
+                    type: integer
+                  fullName:
+                    type: string
+                  htmlUrl:
                     type: string
                   id:
                     format: int64
                     type: integer
-                  readOnly:
-                    type: boolean
-                  repository:
+                  language:
                     type: string
-                  title:
+                  size:
+                    format: int64
+                    type: integer
+                  sshUrl:
                     type: string
-                  url:
+                  stars:
+                    format: int64
+                    type: integer
+                  updatedAt:
+                    format: date-time
                     type: string
                 type: object
               conditions:

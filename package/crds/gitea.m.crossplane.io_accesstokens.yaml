@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: users.gitea.m.crossplane.io
+  name: accesstokens.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: User
-    listKind: UserList
-    plural: users
+    kind: AccessToken
+    listKind: AccessTokenList
+    plural: accesstokens
     shortNames:
-    - user
-    singular: user
+    - acce
+    singular: accesstoken
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -47,16 +47,6 @@ spec:
             properties:
               forProvider:
                 properties:
-                  active:
-                    type: boolean
-                  admin:
-                    type: boolean
-                  allowCreateOrganization:
-                    type: boolean
-                  allowGitHook:
-                    type: boolean
-                  allowImportLocal:
-                    type: boolean
                   connectionRef:
                     properties:
                       name:
@@ -78,23 +68,10 @@ spec:
                     required:
                     - name
                     type: object
-                  description:
+                  name:
+                    maxLength: 100
+                    minLength: 1
                     type: string
-                  email:
-                    format: email
-                    type: string
-                  fullName:
-                    type: string
-                  location:
-                    type: string
-                  loginName:
-                    type: string
-                  maxRepoCreation:
-                    minimum: -1
-                    type: integer
-                  mustChangePassword:
-                    default: false
-                    type: boolean
                   passwordSecretRef:
                     properties:
                       key:
@@ -108,8 +85,6 @@ spec:
                     - name
                     - namespace
                     type: object
-                  prohibitLogin:
-                    type: boolean
                   providerConfigRef:
                     properties:
                       name:
@@ -131,29 +106,18 @@ spec:
                     required:
                     - name
                     type: object
-                  restricted:
-                    default: false
-                    type: boolean
-                  sendNotify:
-                    default: false
-                    type: boolean
-                  sourceId:
-                    format: int64
-                    type: integer
+                  scopes:
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
                   username:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
-                    type: string
-                  visibility:
-                    default: public
-                    enum:
-                    - public
-                    - limited
-                    - private
-                    type: string
-                  website:
+                    maxLength: 40
+                    minLength: 1
                     type: string
                 required:
-                - email
+                - name
+                - scopes
                 - username
                 type: object
               managementPolicies:
@@ -196,20 +160,22 @@ spec:
             properties:
               atProvider:
                 properties:
-                  avatarUrl:
-                    type: string
-                  created:
+                  createdAt:
                     type: string
                   id:
                     format: int64
                     type: integer
-                  isAdmin:
-                    type: boolean
-                  language:
+                  lastUsedAt:
                     type: string
-                  lastLogin:
+                  name:
                     type: string
-                  passwordHash:
+                  scopes:
+                    items:
+                      type: string
+                    type: array
+                  tokenLastEight:
+                    type: string
+                  username:
                     type: string
                 type: object
               conditions:

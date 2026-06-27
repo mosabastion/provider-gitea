@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: githooks.gitea.m.crossplane.io
+  name: repositorycollaborators.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: GitHook
-    listKind: GitHookList
-    plural: githooks
+    kind: RepositoryCollaborator
+    listKind: RepositoryCollaboratorList
+    plural: repositorycollaborators
     shortNames:
-    - gith
-    singular: githook
+    - rcol
+    singular: repositorycollaborator
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -68,19 +68,13 @@ spec:
                     required:
                     - name
                     type: object
-                  content:
-                    type: string
-                  hookType:
+                  permission:
+                    default: read
                     enum:
-                    - pre-receive
-                    - update
-                    - post-receive
-                    - pre-push
-                    - post-update
+                    - read
+                    - write
+                    - admin
                     type: string
-                  isActive:
-                    default: true
-                    type: boolean
                   providerConfigRef:
                     properties:
                       name:
@@ -105,10 +99,13 @@ spec:
                   repository:
                     pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?/[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
                     type: string
+                  username:
+                    minLength: 1
+                    type: string
                 required:
-                - content
-                - hookType
+                - permission
                 - repository
+                - username
                 type: object
               managementPolicies:
                 default:
@@ -150,12 +147,21 @@ spec:
             properties:
               atProvider:
                 properties:
-                  contentHash:
+                  avatarUrl:
                     type: string
-                  lastUpdated:
+                  email:
                     type: string
-                  name:
+                  fullName:
                     type: string
+                  permissions:
+                    properties:
+                      admin:
+                        type: boolean
+                      pull:
+                        type: boolean
+                      push:
+                        type: boolean
+                    type: object
                 type: object
               conditions:
                 items:

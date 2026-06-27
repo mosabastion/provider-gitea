@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: repositorysecrets.gitea.m.crossplane.io
+  name: variables.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: RepositorySecret
-    listKind: RepositorySecretList
-    plural: repositorysecrets
+    kind: Variable
+    listKind: VariableList
+    plural: variables
     shortNames:
-    - rsec
-    singular: repositorysecret
+    - giteavar
+    singular: variable
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -68,6 +68,12 @@ spec:
                     required:
                     - name
                     type: object
+                  name:
+                    pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
+                    type: string
+                  organization:
+                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
+                    type: string
                   providerConfigRef:
                     properties:
                       name:
@@ -92,28 +98,11 @@ spec:
                   repository:
                     pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?/[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
                     type: string
-                  secretName:
-                    maxLength: 100
-                    minLength: 1
-                    pattern: ^[A-Z_][A-Z0-9_]*$
+                  value:
                     type: string
-                  valueSecretRef:
-                    properties:
-                      key:
-                        type: string
-                      name:
-                        type: string
-                      namespace:
-                        type: string
-                    required:
-                    - key
-                    - name
-                    - namespace
-                    type: object
                 required:
-                - repository
-                - secretName
-                - valueSecretRef
+                - name
+                - value
                 type: object
               managementPolicies:
                 default:
@@ -157,10 +146,9 @@ spec:
                 properties:
                   createdAt:
                     type: string
-                  repository:
-                    type: string
-                  secretName:
-                    type: string
+                  id:
+                    format: int64
+                    type: integer
                   updatedAt:
                     type: string
                 type: object

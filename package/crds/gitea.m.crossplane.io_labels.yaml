@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: teams.gitea.m.crossplane.io
+  name: labels.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: Team
-    listKind: TeamList
-    plural: teams
+    kind: Label
+    listKind: LabelList
+    plural: labels
     shortNames:
-    - team
-    singular: team
+    - labe
+    singular: label
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -47,9 +47,9 @@ spec:
             properties:
               forProvider:
                 properties:
-                  canCreateOrgRepo:
-                    default: false
-                    type: boolean
+                  color:
+                    pattern: ^[0-9a-fA-F]{6}$
+                    type: string
                   connectionRef:
                     properties:
                       name:
@@ -73,20 +73,14 @@ spec:
                     type: object
                   description:
                     type: string
-                  includesAllRepositories:
+                  exclusive:
                     default: false
                     type: boolean
                   name:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
+                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9 ._-]*[a-zA-Z0-9])?$
                     type: string
                   organization:
-                    type: string
-                  permission:
-                    default: read
-                    enum:
-                    - read
-                    - write
-                    - admin
+                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
                     type: string
                   providerConfigRef:
                     properties:
@@ -109,13 +103,18 @@ spec:
                     required:
                     - name
                     type: object
-                  units:
-                    items:
-                      type: string
-                    type: array
+                  repository:
+                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?/[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
+                    type: string
+                  scope:
+                    default: repo
+                    enum:
+                    - repo
+                    - org
+                    type: string
                 required:
+                - color
                 - name
-                - organization
                 type: object
               managementPolicies:
                 default:
@@ -160,9 +159,8 @@ spec:
                   id:
                     format: int64
                     type: integer
-                  organizationId:
-                    format: int64
-                    type: integer
+                  url:
+                    type: string
                 type: object
               conditions:
                 items:

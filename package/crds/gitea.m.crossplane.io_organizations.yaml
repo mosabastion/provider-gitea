@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: repositories.gitea.m.crossplane.io
+  name: organizations.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: Repository
-    listKind: RepositoryList
-    plural: repositories
+    kind: Organization
+    listKind: OrganizationList
+    plural: organizations
     shortNames:
-    - grepo
-    singular: repository
+    - gorg
+    singular: organization
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -47,12 +47,6 @@ spec:
             properties:
               forProvider:
                 properties:
-                  archived:
-                    default: false
-                    type: boolean
-                  autoInit:
-                    default: false
-                    type: boolean
                   connectionRef:
                     properties:
                       name:
@@ -74,19 +68,14 @@ spec:
                     required:
                     - name
                     type: object
-                  defaultBranch:
-                    default: master
-                    type: string
                   description:
                     type: string
+                  fullName:
+                    type: string
+                  location:
+                    type: string
                   name:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
                     type: string
-                  owner:
-                    type: string
-                  private:
-                    default: false
-                    type: boolean
                   providerConfigRef:
                     properties:
                       name:
@@ -108,19 +97,20 @@ spec:
                     required:
                     - name
                     type: object
-                  template:
-                    default: false
-                    type: boolean
-                  trustModel:
-                    default: default
+                  username:
+                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
+                    type: string
+                  visibility:
+                    default: public
                     enum:
-                    - default
-                    - collaborator
-                    - committer
-                    - collaboratorcommitter
+                    - public
+                    - limited
+                    - private
+                    type: string
+                  website:
                     type: string
                 required:
-                - name
+                - username
                 type: object
               managementPolicies:
                 default:
@@ -162,29 +152,28 @@ spec:
             properties:
               atProvider:
                 properties:
-                  cloneUrl:
+                  avatarUrl:
                     type: string
                   createdAt:
                     format: date-time
                     type: string
-                  forks:
-                    format: int64
-                    type: integer
-                  fullName:
-                    type: string
-                  htmlUrl:
+                  email:
                     type: string
                   id:
                     format: int64
                     type: integer
-                  language:
-                    type: string
-                  size:
+                  members:
                     format: int64
                     type: integer
-                  sshUrl:
-                    type: string
-                  stars:
+                  privateRepos:
+                    format: int64
+                    type: integer
+                  publicRepos:
+                    format: int64
+                    type: integer
+                  repoAdminChangeTeamAccess:
+                    type: boolean
+                  teams:
                     format: int64
                     type: integer
                   updatedAt:

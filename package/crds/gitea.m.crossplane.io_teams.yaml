@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: accesstokens.gitea.m.crossplane.io
+  name: teams.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: AccessToken
-    listKind: AccessTokenList
-    plural: accesstokens
+    kind: Team
+    listKind: TeamList
+    plural: teams
     shortNames:
-    - acce
-    singular: accesstoken
+    - team
+    singular: team
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -47,6 +47,9 @@ spec:
             properties:
               forProvider:
                 properties:
+                  canCreateOrgRepo:
+                    default: false
+                    type: boolean
                   connectionRef:
                     properties:
                       name:
@@ -68,23 +71,23 @@ spec:
                     required:
                     - name
                     type: object
-                  name:
-                    maxLength: 100
-                    minLength: 1
+                  description:
                     type: string
-                  passwordSecretRef:
-                    properties:
-                      key:
-                        type: string
-                      name:
-                        type: string
-                      namespace:
-                        type: string
-                    required:
-                    - key
-                    - name
-                    - namespace
-                    type: object
+                  includesAllRepositories:
+                    default: false
+                    type: boolean
+                  name:
+                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
+                    type: string
+                  organization:
+                    type: string
+                  permission:
+                    default: read
+                    enum:
+                    - read
+                    - write
+                    - admin
+                    type: string
                   providerConfigRef:
                     properties:
                       name:
@@ -106,19 +109,13 @@ spec:
                     required:
                     - name
                     type: object
-                  scopes:
+                  units:
                     items:
                       type: string
-                    minItems: 1
                     type: array
-                  username:
-                    maxLength: 40
-                    minLength: 1
-                    type: string
                 required:
                 - name
-                - scopes
-                - username
+                - organization
                 type: object
               managementPolicies:
                 default:
@@ -160,23 +157,12 @@ spec:
             properties:
               atProvider:
                 properties:
-                  createdAt:
-                    type: string
                   id:
                     format: int64
                     type: integer
-                  lastUsedAt:
-                    type: string
-                  name:
-                    type: string
-                  scopes:
-                    items:
-                      type: string
-                    type: array
-                  tokenLastEight:
-                    type: string
-                  username:
-                    type: string
+                  organizationId:
+                    format: int64
+                    type: integer
                 type: object
               conditions:
                 items:

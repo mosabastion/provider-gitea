@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.12.0] - 2026-06-27
+
+### Changed
+- CRD files renamed to the unified-group convention (`gitea.m.crossplane.io_*.yaml`)
+  matching controller-gen v0.20.0 output; per-kind-prefix filenames removed.
 
 ### Removed (repo cleanup — no runtime behaviour change)
 - Fork-migration scaffolding scripts (`create-v2-apis.sh`, `complete-v2-apis.sh`,

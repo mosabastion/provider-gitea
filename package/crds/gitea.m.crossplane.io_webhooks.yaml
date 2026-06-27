@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: variables.gitea.m.crossplane.io
+  name: webhooks.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: Variable
-    listKind: VariableList
-    plural: variables
+    kind: Webhook
+    listKind: WebhookList
+    plural: webhooks
     shortNames:
-    - giteavar
-    singular: variable
+    - webh
+    singular: webhook
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -47,6 +47,11 @@ spec:
             properties:
               forProvider:
                 properties:
+                  active:
+                    default: true
+                    type: boolean
+                  branchFilter:
+                    type: string
                   connectionRef:
                     properties:
                       name:
@@ -68,11 +73,21 @@ spec:
                     required:
                     - name
                     type: object
-                  name:
-                    pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
+                  contentType:
+                    default: json
+                    enum:
+                    - json
+                    - form
                     type: string
+                  events:
+                    default:
+                    - push
+                    items:
+                      type: string
+                    type: array
                   organization:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
+                    type: string
+                  owner:
                     type: string
                   providerConfigRef:
                     properties:
@@ -96,13 +111,30 @@ spec:
                     - name
                     type: object
                   repository:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?/[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
                     type: string
-                  value:
+                  secret:
+                    type: string
+                  sslVerification:
+                    default: true
+                    type: boolean
+                  type:
+                    default: gitea
+                    enum:
+                    - gitea
+                    - gogs
+                    - slack
+                    - discord
+                    - dingtalk
+                    - telegram
+                    - msteams
+                    - feishu
+                    - wechatwork
+                    - packagist
+                    type: string
+                  url:
                     type: string
                 required:
-                - name
-                - value
+                - url
                 type: object
               managementPolicies:
                 default:

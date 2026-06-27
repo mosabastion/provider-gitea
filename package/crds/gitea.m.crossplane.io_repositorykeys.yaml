@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: organizations.gitea.m.crossplane.io
+  name: repositorykeys.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: Organization
-    listKind: OrganizationList
-    plural: organizations
+    kind: RepositoryKey
+    listKind: RepositoryKeyList
+    plural: repositorykeys
     shortNames:
-    - gorg
-    singular: organization
+    - rkey
+    singular: repositorykey
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -68,13 +68,9 @@ spec:
                     required:
                     - name
                     type: object
-                  description:
-                    type: string
-                  fullName:
-                    type: string
-                  location:
-                    type: string
-                  name:
+                  key:
+                    pattern: ^(ssh-rsa|ssh-ed25519|ssh-dss|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521)
+                      AAAA[0-9A-Za-z+/]+[=]{0,3}( .*)?$
                     type: string
                   providerConfigRef:
                     properties:
@@ -97,20 +93,20 @@ spec:
                     required:
                     - name
                     type: object
-                  username:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
+                  readOnly:
+                    default: true
+                    type: boolean
+                  repository:
+                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?/[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
                     type: string
-                  visibility:
-                    default: public
-                    enum:
-                    - public
-                    - limited
-                    - private
-                    type: string
-                  website:
+                  title:
+                    maxLength: 100
+                    minLength: 1
                     type: string
                 required:
-                - username
+                - key
+                - repository
+                - title
                 type: object
               managementPolicies:
                 default:
@@ -152,32 +148,20 @@ spec:
             properties:
               atProvider:
                 properties:
-                  avatarUrl:
-                    type: string
                   createdAt:
-                    format: date-time
                     type: string
-                  email:
+                  fingerprint:
                     type: string
                   id:
                     format: int64
                     type: integer
-                  members:
-                    format: int64
-                    type: integer
-                  privateRepos:
-                    format: int64
-                    type: integer
-                  publicRepos:
-                    format: int64
-                    type: integer
-                  repoAdminChangeTeamAccess:
+                  readOnly:
                     type: boolean
-                  teams:
-                    format: int64
-                    type: integer
-                  updatedAt:
-                    format: date-time
+                  repository:
+                    type: string
+                  title:
+                    type: string
+                  url:
                     type: string
                 type: object
               conditions:

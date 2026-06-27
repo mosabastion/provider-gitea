@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: branchprotections.gitea.m.crossplane.io
+  name: users.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: BranchProtection
-    listKind: BranchProtectionList
-    plural: branchprotections
+    kind: User
+    listKind: UserList
+    plural: users
     shortNames:
-    - bran
-    singular: branchprotection
+    - user
+    singular: user
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -47,25 +47,16 @@ spec:
             properties:
               forProvider:
                 properties:
-                  approvalsWhitelistTeams:
-                    items:
-                      type: string
-                    type: array
-                  approvalsWhitelistUsernames:
-                    items:
-                      type: string
-                    type: array
-                  blockOnOfficialReviewRequests:
-                    default: false
+                  active:
                     type: boolean
-                  blockOnOutdatedBranch:
-                    default: false
+                  admin:
                     type: boolean
-                  blockOnRejectedReviews:
-                    default: false
+                  allowCreateOrganization:
                     type: boolean
-                  branch:
-                    type: string
+                  allowGitHook:
+                    type: boolean
+                  allowImportLocal:
+                    type: boolean
                   connectionRef:
                     properties:
                       name:
@@ -87,34 +78,38 @@ spec:
                     required:
                     - name
                     type: object
-                  dismissStaleApprovals:
-                    default: false
-                    type: boolean
-                  enableApprovalsWhitelist:
-                    default: false
-                    type: boolean
-                  enableMergeWhitelist:
-                    default: false
-                    type: boolean
-                  enablePush:
-                    default: true
-                    type: boolean
-                  enablePushWhitelist:
-                    default: false
-                    type: boolean
-                  enableStatusCheck:
-                    default: false
-                    type: boolean
-                  mergeWhitelistTeams:
-                    items:
-                      type: string
-                    type: array
-                  mergeWhitelistUsernames:
-                    items:
-                      type: string
-                    type: array
-                  protectedFilePatterns:
+                  description:
                     type: string
+                  email:
+                    format: email
+                    type: string
+                  fullName:
+                    type: string
+                  location:
+                    type: string
+                  loginName:
+                    type: string
+                  maxRepoCreation:
+                    minimum: -1
+                    type: integer
+                  mustChangePassword:
+                    default: false
+                    type: boolean
+                  passwordSecretRef:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - key
+                    - name
+                    - namespace
+                    type: object
+                  prohibitLogin:
+                    type: boolean
                   providerConfigRef:
                     properties:
                       name:
@@ -136,40 +131,30 @@ spec:
                     required:
                     - name
                     type: object
-                  pushWhitelistDeployKeys:
+                  restricted:
                     default: false
                     type: boolean
-                  pushWhitelistTeams:
-                    items:
-                      type: string
-                    type: array
-                  pushWhitelistUsernames:
-                    items:
-                      type: string
-                    type: array
-                  repository:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?/[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
-                    type: string
-                  requireSignedCommits:
+                  sendNotify:
                     default: false
                     type: boolean
-                  requiredApprovals:
-                    default: 0
-                    maximum: 100
-                    minimum: 0
+                  sourceId:
+                    format: int64
                     type: integer
-                  ruleName:
+                  username:
+                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
                     type: string
-                  statusCheckContexts:
-                    items:
-                      type: string
-                    type: array
-                  unprotectedFilePatterns:
+                  visibility:
+                    default: public
+                    enum:
+                    - public
+                    - limited
+                    - private
+                    type: string
+                  website:
                     type: string
                 required:
-                - branch
-                - repository
-                - ruleName
+                - email
+                - username
                 type: object
               managementPolicies:
                 default:
@@ -211,22 +196,20 @@ spec:
             properties:
               atProvider:
                 properties:
-                  appliedSettings:
-                    properties:
-                      enablePush:
-                        type: boolean
-                      enableStatusCheck:
-                        type: boolean
-                      requiredStatusChecks:
-                        items:
-                          type: string
-                        type: array
-                    type: object
-                  createdAt:
+                  avatarUrl:
                     type: string
-                  ruleName:
+                  created:
                     type: string
-                  updatedAt:
+                  id:
+                    format: int64
+                    type: integer
+                  isAdmin:
+                    type: boolean
+                  language:
+                    type: string
+                  lastLogin:
+                    type: string
+                  passwordHash:
                     type: string
                 type: object
               conditions:

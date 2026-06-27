@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: labels.gitea.m.crossplane.io
+  name: githooks.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: Label
-    listKind: LabelList
-    plural: labels
+    kind: GitHook
+    listKind: GitHookList
+    plural: githooks
     shortNames:
-    - labe
-    singular: label
+    - gith
+    singular: githook
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -47,9 +47,6 @@ spec:
             properties:
               forProvider:
                 properties:
-                  color:
-                    pattern: ^[0-9a-fA-F]{6}$
-                    type: string
                   connectionRef:
                     properties:
                       name:
@@ -71,17 +68,19 @@ spec:
                     required:
                     - name
                     type: object
-                  description:
+                  content:
                     type: string
-                  exclusive:
-                    default: false
+                  hookType:
+                    enum:
+                    - pre-receive
+                    - update
+                    - post-receive
+                    - pre-push
+                    - post-update
+                    type: string
+                  isActive:
+                    default: true
                     type: boolean
-                  name:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9 ._-]*[a-zA-Z0-9])?$
-                    type: string
-                  organization:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
-                    type: string
                   providerConfigRef:
                     properties:
                       name:
@@ -106,15 +105,10 @@ spec:
                   repository:
                     pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?/[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
                     type: string
-                  scope:
-                    default: repo
-                    enum:
-                    - repo
-                    - org
-                    type: string
                 required:
-                - color
-                - name
+                - content
+                - hookType
+                - repository
                 type: object
               managementPolicies:
                 default:
@@ -156,10 +150,11 @@ spec:
             properties:
               atProvider:
                 properties:
-                  id:
-                    format: int64
-                    type: integer
-                  url:
+                  contentHash:
+                    type: string
+                  lastUpdated:
+                    type: string
+                  name:
                     type: string
                 type: object
               conditions:

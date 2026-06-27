@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: repositorycollaborators.gitea.m.crossplane.io
+  name: organizationsettings.gitea.m.crossplane.io
 spec:
   group: gitea.m.crossplane.io
   names:
@@ -12,12 +12,12 @@ spec:
     - crossplane
     - managed
     - gitea
-    kind: RepositoryCollaborator
-    listKind: RepositoryCollaboratorList
-    plural: repositorycollaborators
+    kind: OrganizationSettings
+    listKind: OrganizationSettingsList
+    plural: organizationsettings
     shortNames:
-    - rcol
-    singular: repositorycollaborator
+    - orga
+    singular: organizationsettings
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1beta1
+    name: v2
     schema:
       openAPIV3Schema:
         properties:
@@ -47,6 +47,12 @@ spec:
             properties:
               forProvider:
                 properties:
+                  allowCustomGitHooks:
+                    default: false
+                    type: boolean
+                  allowGitHooks:
+                    default: false
+                    type: boolean
                   connectionRef:
                     properties:
                       name:
@@ -68,12 +74,43 @@ spec:
                     required:
                     - name
                     type: object
-                  permission:
+                  defaultRepoPermission:
                     default: read
                     enum:
                     - read
                     - write
                     - admin
+                    type: string
+                  defaultRepoVisibility:
+                    default: public
+                    enum:
+                    - public
+                    - private
+                    - internal
+                    type: string
+                  enableDependencyGraph:
+                    default: false
+                    type: boolean
+                  membersCanCreateInternal:
+                    default: true
+                    type: boolean
+                  membersCanCreatePages:
+                    default: true
+                    type: boolean
+                  membersCanCreatePrivate:
+                    default: true
+                    type: boolean
+                  membersCanCreateRepos:
+                    default: true
+                    type: boolean
+                  membersCanDeleteRepos:
+                    default: false
+                    type: boolean
+                  membersCanFork:
+                    default: true
+                    type: boolean
+                  organization:
+                    minLength: 1
                     type: string
                   providerConfigRef:
                     properties:
@@ -96,16 +133,11 @@ spec:
                     required:
                     - name
                     type: object
-                  repository:
-                    pattern: ^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?/[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$
-                    type: string
-                  username:
-                    minLength: 1
-                    type: string
+                  requireSignedCommits:
+                    default: false
+                    type: boolean
                 required:
-                - permission
-                - repository
-                - username
+                - organization
                 type: object
               managementPolicies:
                 default:
@@ -147,21 +179,20 @@ spec:
             properties:
               atProvider:
                 properties:
-                  avatarUrl:
-                    type: string
-                  email:
-                    type: string
-                  fullName:
-                    type: string
-                  permissions:
+                  appliedSettings:
                     properties:
-                      admin:
-                        type: boolean
-                      pull:
-                        type: boolean
-                      push:
-                        type: boolean
+                      description:
+                        type: string
+                      location:
+                        type: string
+                      website:
+                        type: string
                     type: object
+                  lastUpdated:
+                    type: string
+                  organizationId:
+                    format: int64
+                    type: integer
                 type: object
               conditions:
                 items:
