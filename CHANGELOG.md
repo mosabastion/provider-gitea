@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `TeamMembership` managed resource: adds/removes a user to/from an existing
+  team (`GET`/`PUT`/`DELETE /teams/{id}/members/{username}`). Team is
+  referenced by (`organization`, `team`) name, resolved to a numeric id via
+  `ListOrganizationTeams`, with an optional `teamId` escape hatch to skip
+  resolution. Membership is binary — there is no per-member role — so
+  `Update` is a no-op. Making a user an organization owner is just membership
+  in the org's auto-created `Owners` team, so this one kind covers that case
+  too; this deliberately supersedes the abandoned `OrganizationMember` kind,
+  whose `PUT /orgs/{org}/members/{username}` client call targets an endpoint
+  Gitea does not have.
+- `TeamRepository` managed resource: attaches/detaches an org repository
+  to/from a team (`GET`/`PUT`/`DELETE /teams/{id}/repos/{org}/{repo}`), using
+  the same team name/id resolution as `TeamMembership`. `Update` is a no-op.
+
 ### Fixed
 - `User`'s `CreateUserRequest.MustChangePassword`/`Restricted` were plain
   `bool` with `json:"...,omitempty"` — Go's `omitempty` drops a field at its
@@ -21,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `UpdateUserRequest` had no `MustChangePassword` field at all, so no
   `Update` (drift correction, admin promotion, or otherwise) could ever
   address it — only `Create` could set it, and only in one direction.
+- Bumped the pinned Go toolchain from 1.26.4 to 1.26.5 (`go.mod` +
+  `.github/workflows/{ci,e2e,release,security}.yml`) to pick up the
+  `crypto/tls` Encrypted Client Hello privacy-leak fix
+  ([GO-2026-5856](https://pkg.go.dev/vuln/GO-2026-5856)), which `govulncheck`
+  flagged as reachable through `internal/clients` HTTP calls — this had
+  started failing CI's security-scan job on every PR/push, unrelated to any
+  particular change.
 
 ## [0.12.3] - 2026-07-03
 
