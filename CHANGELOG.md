@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `UpdateUserRequest` had no `MustChangePassword` field at all, so no
   `Update` (drift correction, admin promotion, or otherwise) could ever
   address it — only `Create` could set it, and only in one direction.
+- Bumped the pinned Go toolchain from 1.26.4 to 1.26.5 (`go.mod` +
+  `.github/workflows/{ci,e2e,release,security}.yml`) to pick up the
+  `crypto/tls` Encrypted Client Hello privacy-leak fix
+  ([GO-2026-5856](https://pkg.go.dev/vuln/GO-2026-5856)), which `govulncheck`
+  flagged as reachable through `internal/clients` HTTP calls — this had
+  started failing CI's security-scan job on every PR/push, unrelated to any
+  particular change.
 
 ## [0.12.3] - 2026-07-03
 
