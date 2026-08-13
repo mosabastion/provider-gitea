@@ -1,0 +1,31 @@
+# A rule name containing a SLASH — the case that was write-only.
+#
+# `stage/*` and `release/*` are the ordinary way to protect an environment
+# branch layout, and the rule name is interpolated into a URL path segment. An
+# unescaped slash turned the GET into a request for a route that does not
+# exist, so Observe reported "absent" for a rule the provider had just created,
+# Create ran again, and Gitea rejected it with "Branch protection already
+# exist" — on every reconcile, forever.
+#
+# The uptest lifecycle is what makes this a real check: it creates, waits for
+# Ready, and deletes. A resource that cannot be observed never goes Ready, so
+# this manifest fails on the unfixed provider at the create step rather than
+# needing an assertion written for it.
+#
+# `main` is covered by branchprotection.yaml — keep both. The plain name is the
+# case escaping must not alter, and it is the one that already worked.
+apiVersion: gitea.m.crossplane.io/v1beta1
+kind: BranchProtection
+metadata:
+  name: uptest-bp-glob
+  namespace: provider-gitea-e2e
+  annotations:
+    meta.upbound.io/example-id: branchprotection/v2/branchprotection-glob
+spec:
+  forProvider:
+    repository: gitea_admin/uptest-repo
+    branch: stage/*
+    ruleName: stage/*
+  providerConfigRef:
+    name: e2e
+    kind: ProviderConfig

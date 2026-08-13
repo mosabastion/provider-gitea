@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `BranchProtection`: URL-escape the rule name in the `Get`/`Update`/`Delete`
+  paths. A rule name is a **glob**, and the ordinary glob for an environment
+  branch layout contains a slash (`stage/*`, `release/*`). The name was
+  interpolated raw into a URL path segment, so the slash became a path
+  **separator** and the request landed on a route that does not exist.
+
+  The failure mode is the damaging part: the miss returns **404**, which the
+  client maps to not-found and the controller reads as "the resource does not
+  exist". So `Observe` reported absent for a rule the provider had itself
+  created, `Create` ran again, and Gitea rejected it with
+  `Branch protection already exist` — on every reconcile, indefinitely. The rule
+  was present and enforcing the whole time, while Crossplane reported
+  `Synced=False` and could no longer detect real drift: a rule deleted in Gitea
+  would never have been restored.
+
+  Observed on a live platform as `external-create-succeeded` and
+  `external-create-failed` annotations four hours apart on one object. Confirmed
+  against a real Forgejo before fixing: raw `stage/*` → 404, escaped
+  `stage%2F*` → 200 — so the server routes the escaped form correctly and the
+  defect was entirely client-side.
+
+  Covered by unit tests that assert the **request path** (a response-only
+  assertion would pass against the broken client if the server were lenient
+  about routing), plus an e2e manifest with a slashed rule name — uptest's
+  create/Ready/delete lifecycle fails at Ready on the unfixed provider, so the
+  regression needs no bespoke assertion.
+
 ## [0.13.0] - 2026-07-09
 
 ### Added

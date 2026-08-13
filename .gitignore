@@ -54,3 +54,6 @@ benchmark-results.txt
 # Temporary files
 tmp/
 temp/
+
+# e2e local registry TLS material (regenerated per run)
+.e2e-registry-certs/

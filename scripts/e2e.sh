@@ -35,8 +35,29 @@ if [ ! -x "$UPTEST" ]; then
   chmod +x "$UPTEST"
 fi
 
-# 1. kind + Crossplane (idempotent).
-"${ROOT}/scripts/cluster-up.sh"
+REG_HOST="${REG_HOST:-registry.e2e.local}"
+CERT_DIR="${CERT_DIR:-${ROOT}/.e2e-registry-certs}"
+if [ ! -f "${CERT_DIR}/ca.crt" ] || [ ! -f "${CERT_DIR}/tls.crt" ]; then
+  log "generating registry TLS cert for ${REG_HOST} + localhost"
+  rm -rf "$CERT_DIR"; mkdir -p "$CERT_DIR"
+  # 397 days and an explicit serverAuth EKU are not cosmetic: macOS's verifier
+  # (which Go uses on darwin) rejects anything longer-lived or without it as
+  # `certificate is not standards compliant`, so a 10-year cert breaks the push
+  # on a developer laptop while passing in Linux CI. Apple's ceiling is 398.
+  openssl req -x509 -newkey rsa:2048 -sha256 -days 397 -nodes \
+    -keyout "${CERT_DIR}/tls.key" -out "${CERT_DIR}/tls.crt" \
+    -subj "/CN=${REG_HOST}" \
+    -addext "subjectAltName=DNS:${REG_HOST},DNS:localhost,IP:127.0.0.1" \
+    -addext "keyUsage=critical,digitalSignature,keyEncipherment,keyCertSign" \
+    -addext "extendedKeyUsage=serverAuth" \
+    -addext "basicConstraints=critical,CA:true" >/dev/null 2>&1 \
+    || die "openssl could not generate the registry certificate"
+  cp "${CERT_DIR}/tls.crt" "${CERT_DIR}/ca.crt"   # self-signed: cert IS the CA
+fi
+
+# 1. kind + Crossplane (idempotent). The CA has to exist BEFORE this runs:
+# Crossplane reads it at install time via registryCaBundleConfig.
+CROSSPLANE_REGISTRY_CA="${CERT_DIR}/ca.crt" "${ROOT}/scripts/cluster-up.sh"
 
 ORIG_CTX="$(kubectl config current-context 2>/dev/null || true)"
 cleanup() {
@@ -57,22 +78,45 @@ kubectl config use-context "$KCTX" >/dev/null
 #    CoreDNS + containerd both resolve is the smallest thing that satisfies it.
 REG_NAME="${REG_NAME:-provider-gitea-e2e-registry}"
 REG_PORT="${REG_PORT:-5001}"
+# The registry serves TLS, and Crossplane is given the CA (see cluster-up.sh).
+#
+# It used to be plain HTTP, with the kind node's containerd pointed at it via a
+# hosts.toml. That covers the KUBELET pulling an image and nothing else:
+# Crossplane's package manager resolves the package ref tag -> digest ITSELF,
+# in-process, and go-containerregistry speaks HTTPS to any registry that is not
+# localhost. containerd's opinion never enters into it, so the install failed
+# with
+#
+#   cannot resolve <ref> to digest: Get "https://registry.e2e.local:5000/v2/":
+#   http: server gave HTTP response to HTTPS client
+#
+# and the provider never became Healthy. `crossplane core start` has exactly one
+# knob here — `--ca-bundle-path` — so serving TLS and trusting the CA is the
+# supported shape; there is no insecure/plain-HTTP option to reach for.
+#
+# The certificate carries BOTH names on purpose: `registry.e2e.local` for the
+# in-cluster pull, and `localhost` for the host-side push, so pushing needs no
+# /etc/hosts entry (which would need sudo in CI).
 if [ -z "$(docker ps -q -f "name=^${REG_NAME}$")" ]; then
-  log "starting local registry ${REG_NAME} on :${REG_PORT}"
-  docker run -d --restart=always -p "127.0.0.1:${REG_PORT}:5000" --name "$REG_NAME" registry:2 >/dev/null
+  log "starting local registry ${REG_NAME} on :${REG_PORT} (TLS)"
+  docker rm -f "$REG_NAME" >/dev/null 2>&1 || true
+  docker run -d --restart=always -p "127.0.0.1:${REG_PORT}:5000" --name "$REG_NAME" \
+    -v "${CERT_DIR}:/certs:ro" \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/tls.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/tls.key \
+    registry:2 >/dev/null
 fi
-REG_HOST="${REG_HOST:-registry.e2e.local}"
 docker network connect kind "$REG_NAME" 2>/dev/null || true
 REG_IP="$(docker inspect -f '{{(index .NetworkSettings.Networks "kind").IPAddress}}' "$REG_NAME")"
 [ -n "$REG_IP" ] || die "could not determine ${REG_NAME} IP on the kind network"
 PUSH_REF="localhost:${REG_PORT}/${PROVIDER}:e2e"
 REG_REF="${REG_HOST}:5000/${PROVIDER}:e2e"
 
-log "pointing kind node containerd at ${REG_HOST}:5000 (plain http) + /etc/hosts"
+log "pointing kind node containerd at ${REG_HOST}:5000 (https, self-signed) + /etc/hosts"
 for node in $(kind get nodes --name "$KIND_CLUSTER"); do
   docker exec "$node" mkdir -p "/etc/containerd/certs.d/${REG_HOST}:5000"
   cat <<HOSTS | docker exec -i "$node" cp /dev/stdin "/etc/containerd/certs.d/${REG_HOST}:5000/hosts.toml"
-[host."http://${REG_HOST}:5000"]
+[host."https://${REG_HOST}:5000"]
   capabilities = ["pull", "resolve"]
   skip_verify = true
 HOSTS
@@ -112,7 +156,15 @@ CRANK="$(ensure_crossplane_cli)"
 # found". The local registry needs no auth, so an empty config sidesteps it.
 CLEAN_DOCKER_CFG="$(mktemp -d)"
 echo '{}' > "${CLEAN_DOCKER_CFG}/config.json"
-DOCKER_CONFIG="$CLEAN_DOCKER_CFG" "$CRANK" xpkg push -f "$XPKG" "$PUSH_REF"
+# --insecure-skip-tls-verify, not SSL_CERT_FILE: on darwin Go verifies through
+# Security.framework and ignores SSL_CERT_FILE entirely, so trusting the CA by
+# env var works on Linux CI and fails on a developer's Mac with
+# `x509: certificate signed by unknown authority`. This is a throwaway registry
+# on 127.0.0.1 holding a package we built seconds ago — skipping verification
+# for the PUSH is not the security boundary here. The in-cluster PULL still
+# verifies properly, against the CA handed to Crossplane.
+DOCKER_CONFIG="$CLEAN_DOCKER_CFG" \
+  "$CRANK" xpkg push --insecure-skip-tls-verify -f "$XPKG" "$PUSH_REF"
 rm -rf "$CLEAN_DOCKER_CFG"
 cat <<EOF | kubectl apply -f -
 apiVersion: pkg.crossplane.io/v1
