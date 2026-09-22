@@ -32,6 +32,11 @@ env:
   GOLANGCILINT_VERSION: '2.12.2'
   DOCKER_BUILDX_VERSION: 'v0.11.2'
 
+# A newer push to the same PR makes the older run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   detect-noop:
     runs-on: ubuntu-24.04
@@ -169,6 +174,14 @@ jobs:
         with:
           sarif_file: gosec-results.sarif
           category: gosec
+
+  e2e:
+    # The costliest job, so it runs only once every cheap check is green.
+    needs: [lint, check-diff, unit-tests, security-scan]
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/e2e.yml
 
   # CI ONLY VALIDATES BUILDS - NO PUBLISHING
   build-validation:
