@@ -7,14 +7,9 @@ name: E2E (kind + real Gitea)
 # actually reconcile end to end — the thing unit tests and `helm template` can't.
 # See crossplane-provider-template dev/docs/08-cluster-validation.md.
 
+# Called from ci.yml once every cheap check is green.
 on:
-  pull_request:
-  push:
-    branches: [main, master]
-
-concurrency:
-  group: e2e-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
 
 env:
   GO_VERSION: '1.26.5'
